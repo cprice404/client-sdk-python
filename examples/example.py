@@ -94,7 +94,8 @@ async def main():
         # threads.append(aiohttp_thread)
         # aiohttp_thread.start()
 
-        # aiohttp_coro = aiohttp_function()
+        aiohttp_coro = aiohttp_function()
+        await aiohttp_coro
 
         for index, thread in enumerate(threads):
             logging.info("Main    : before joining thread %d.", index)
@@ -106,7 +107,7 @@ async def main():
         print("Done done.")
 
 if __name__ == "__main__":
-    main()
+    # main()
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
     _print_end_banner()

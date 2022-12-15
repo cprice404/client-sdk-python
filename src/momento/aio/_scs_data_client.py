@@ -1,6 +1,7 @@
 import asyncio
 from typing import Mapping, Optional, Union
 
+from grpc.aio import Metadata
 from momento_wire_types.cacheclient_pb2 import _DeleteRequest, _GetRequest, _SetRequest
 
 from .. import _cache_service_errors_converter
@@ -8,13 +9,15 @@ from .. import cache_operation_types as cache_sdk_ops
 from .. import logs
 from .._utilities._data_validation import (
     _as_bytes,
-    _make_metadata,
     _validate_cache_name,
     _validate_ttl,
 )
 from . import _scs_grpc_manager
 
 _DEFAULT_DEADLINE_SECONDS = 5.0  # 5 seconds
+
+def _make_metadata(cache_name: str) -> Metadata:
+    return Metadata(("cache", cache_name))  # type: ignore[misc]
 
 
 class _ScsDataClient:

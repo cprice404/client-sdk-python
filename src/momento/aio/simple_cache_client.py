@@ -102,6 +102,9 @@ class SimpleCacheClient:
         traceback: Optional[TracebackType],
     ) -> None:
         await self._control_client.close()
+
+        asdf
+
         for data_client in self._data_clients:
             await data_client.close()
 

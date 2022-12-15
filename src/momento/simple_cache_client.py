@@ -20,6 +20,7 @@ from .cache_operation_types import (
 )
 
 from .internal.synchronous._scs_control_client import _ScsControlClient
+from .internal.synchronous._scs_data_client import _ScsDataClient
 
 from . import _momento_endpoint_resolver
 
@@ -58,7 +59,7 @@ class SimpleCacheClient:
             auth_token,
             endpoints.cache_endpoint,
             default_ttl_seconds,
-            data_client_operation_timeout_ms,
+            request_timeout_ms,
         )
 
 
@@ -88,10 +89,12 @@ class SimpleCacheClient:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        wait_for_coroutine(
-            self._loop,
-            self._momento_async_client.__aexit__(exc_type, exc_value, traceback),
-        )
+        # wait_for_coroutine(
+        #     self._loop,
+        #     self._momento_async_client.__aexit__(exc_type, exc_value, traceback),
+        # )
+        self._control_client.close()
+        self._data_client.close()
 
     def create_cache(self, cache_name: str) -> CreateCacheResponse:
         """Creates a new cache in your Momento account.
@@ -109,9 +112,10 @@ class SimpleCacheClient:
             AuthenticationError: If the provided Momento Auth Token is invalid.
             ClientSdkError: For any SDK checks that fail.
         """
-        coroutine = self._momento_async_client.create_cache(cache_name)
-        # args = [cache_name]
-        return wait_for_coroutine(self._loop, coroutine)
+        # coroutine = self._momento_async_client.create_cache(cache_name)
+        # # args = [cache_name]
+        # return wait_for_coroutine(self._loop, coroutine)
+        return self._control_client.create_cache(cache_name)
 
     def delete_cache(self, cache_name: str) -> DeleteCacheResponse:
         """Deletes a cache and all the items within it.
@@ -129,8 +133,9 @@ class SimpleCacheClient:
             AuthenticationError: If the provided Momento Auth Token is invalid.
             ClientSdkError: For any SDK checks that fail.
         """
-        coroutine = self._momento_async_client.delete_cache(cache_name)
-        return wait_for_coroutine(self._loop, coroutine)
+        # coroutine = self._momento_async_client.delete_cache(cache_name)
+        # return wait_for_coroutine(self._loop, coroutine)
+        return self._control_client.delete_cache(cache_name)
 
     def list_caches(self, next_token: Optional[str] = None) -> ListCachesResponse:
         """Lists all caches.
@@ -144,58 +149,60 @@ class SimpleCacheClient:
         Raises:
             AuthenticationError: If the provided Momento Auth Token is invalid.
         """
-        coroutine = self._momento_async_client.list_caches(next_token)
-        return wait_for_coroutine(self._loop, coroutine)
+        # coroutine = self._momento_async_client.list_caches(next_token)
+        # return wait_for_coroutine(self._loop, coroutine)
+        return self._control_client.list_caches(next_token)
 
-    def create_signing_key(self, ttl_minutes: int) -> CreateSigningKeyResponse:
-        """Creates a Momento signing key
+    # def create_signing_key(self, ttl_minutes: int) -> CreateSigningKeyResponse:
+    #     """Creates a Momento signing key
+    #
+    #     Args:
+    #         ttl_minutes: The key's time-to-live in minutes
+    #
+    #     Returns:
+    #         CreateSigningKeyResponse
+    #
+    #     Raises:
+    #         InvalidArgumentError: If provided ttl minutes is negative.
+    #         BadRequestError: If the ttl provided is not accepted
+    #         AuthenticationError: If the provided Momento Auth Token is invalid.
+    #         ClientSdkError: For any SDK checks that fail.
+    #     """
+    #     # coroutine = self._momento_async_client.create_signing_key(ttl_minutes)
+    #     # return wait_for_coroutine(self._loop, coroutine)
+    #     return self._control_client.cre
 
-        Args:
-            ttl_minutes: The key's time-to-live in minutes
-
-        Returns:
-            CreateSigningKeyResponse
-
-        Raises:
-            InvalidArgumentError: If provided ttl minutes is negative.
-            BadRequestError: If the ttl provided is not accepted
-            AuthenticationError: If the provided Momento Auth Token is invalid.
-            ClientSdkError: For any SDK checks that fail.
-        """
-        coroutine = self._momento_async_client.create_signing_key(ttl_minutes)
-        return wait_for_coroutine(self._loop, coroutine)
-
-    def revoke_signing_key(self, key_id: str) -> RevokeSigningKeyResponse:
-        """Revokes a Momento signing key, all tokens signed by which will be invalid
-
-        Args:
-            key_id: The id of the Momento signing key to revoke
-
-        Returns:
-            RevokeSigningKeyResponse
-
-        Raises:
-            AuthenticationError: If the provided Momento Auth Token is invalid.
-            ClientSdkError: For any SDK checks that fail.
-        """
-        coroutine = self._momento_async_client.revoke_signing_key(key_id)
-        return wait_for_coroutine(self._loop, coroutine)
-
-    def list_signing_keys(self, next_token: Optional[str] = None) -> ListSigningKeysResponse:
-        """Lists all Momento signing keys for the provided auth token.
-
-        Args:
-            next_token: Token to continue paginating through the list. It's used to handle large paginated lists.
-
-        Returns:
-            ListSigningKeysResponse
-
-        Raises:
-            AuthenticationError: If the provided Momento Auth Token is invalid.
-            ClientSdkError: For any SDK checks that fail.
-        """
-        coroutine = self._momento_async_client.list_signing_keys(next_token)
-        return wait_for_coroutine(self._loop, coroutine)
+    # def revoke_signing_key(self, key_id: str) -> RevokeSigningKeyResponse:
+    #     """Revokes a Momento signing key, all tokens signed by which will be invalid
+    #
+    #     Args:
+    #         key_id: The id of the Momento signing key to revoke
+    #
+    #     Returns:
+    #         RevokeSigningKeyResponse
+    #
+    #     Raises:
+    #         AuthenticationError: If the provided Momento Auth Token is invalid.
+    #         ClientSdkError: For any SDK checks that fail.
+    #     """
+    #     coroutine = self._momento_async_client.revoke_signing_key(key_id)
+    #     return wait_for_coroutine(self._loop, coroutine)
+    #
+    # def list_signing_keys(self, next_token: Optional[str] = None) -> ListSigningKeysResponse:
+    #     """Lists all Momento signing keys for the provided auth token.
+    #
+    #     Args:
+    #         next_token: Token to continue paginating through the list. It's used to handle large paginated lists.
+    #
+    #     Returns:
+    #         ListSigningKeysResponse
+    #
+    #     Raises:
+    #         AuthenticationError: If the provided Momento Auth Token is invalid.
+    #         ClientSdkError: For any SDK checks that fail.
+    #     """
+    #     coroutine = self._momento_async_client.list_signing_keys(next_token)
+    #     return wait_for_coroutine(self._loop, coroutine)
 
     def set(
         self,
@@ -223,35 +230,36 @@ class SimpleCacheClient:
             AuthenticationError: If the provided Momento Auth Token is invalid.
             InternalServerError: If server encountered an unknown error while trying to store the item.
         """
-        print("\n\n\n\nSET!!!\n\n\n")
-        coroutine = self._momento_async_client.set(cache_name, key, value, ttl_seconds)
-        return wait_for_coroutine(self._loop, coroutine)
+        # print("\n\n\n\nSET!!!\n\n\n")
+        # coroutine = self._momento_async_client.set(cache_name, key, value, ttl_seconds)
+        # return wait_for_coroutine(self._loop, coroutine)
+        return self._data_client.set(cache_name, key, value, ttl_seconds)
 
-    def set_multi(
-        self,
-        cache_name: str,
-        items: Union[Mapping[str, str], Mapping[bytes, bytes]],
-        ttl_seconds: Optional[int] = None,
-    ) -> CacheSetMultiResponse:
-        """Store items in the cache.
-
-        Args:
-            cache_name: Name of the cache to store the item in.
-            items: (Union[Mapping[str, str], Mapping[bytes, bytes]]): The items to store.
-            ttl_seconds: (Optional[int]): The TTL to apply to each item. Defaults to None.
-
-        Returns:
-            CacheSetMultiResponse
-
-        Raises:
-            InvalidArgumentError: If validation fails for the provided method arguments.
-            BadRequestError: If the provided inputs are rejected by server because they are invalid
-            NotFoundError: If the cache with the given name doesn't exist.
-            AuthenticationError: If the provided Momento Auth Token is invalid.
-            InternalServerError: If server encountered an unknown error while trying to retrieve the item.
-        """
-        coroutine = self._momento_async_client.set_multi(cache_name, items, ttl_seconds)
-        return wait_for_coroutine(self._loop, coroutine)
+    # def set_multi(
+    #     self,
+    #     cache_name: str,
+    #     items: Union[Mapping[str, str], Mapping[bytes, bytes]],
+    #     ttl_seconds: Optional[int] = None,
+    # ) -> CacheSetMultiResponse:
+    #     """Store items in the cache.
+    #
+    #     Args:
+    #         cache_name: Name of the cache to store the item in.
+    #         items: (Union[Mapping[str, str], Mapping[bytes, bytes]]): The items to store.
+    #         ttl_seconds: (Optional[int]): The TTL to apply to each item. Defaults to None.
+    #
+    #     Returns:
+    #         CacheSetMultiResponse
+    #
+    #     Raises:
+    #         InvalidArgumentError: If validation fails for the provided method arguments.
+    #         BadRequestError: If the provided inputs are rejected by server because they are invalid
+    #         NotFoundError: If the cache with the given name doesn't exist.
+    #         AuthenticationError: If the provided Momento Auth Token is invalid.
+    #         InternalServerError: If server encountered an unknown error while trying to retrieve the item.
+    #     """
+    #     coroutine = self._momento_async_client.set_multi(cache_name, items, ttl_seconds)
+    #     return wait_for_coroutine(self._loop, coroutine)
 
     def get(self, cache_name: str, key: str) -> CacheGetResponse:
         """Retrieve an item from the cache
@@ -270,48 +278,50 @@ class SimpleCacheClient:
             AuthenticationError: If the provided Momento Auth Token is invalid.
             InternalServerError: If server encountered an unknown error while trying to retrieve the item.
         """
-        print("\n\n\n\nGET!!!\n\n\n")
-        coroutine = self._momento_async_client.get(cache_name, key)
-        return wait_for_coroutine(self._loop, coroutine)
+        # print("\n\n\n\nGET!!!\n\n\n")
+        # coroutine = self._momento_async_client.get(cache_name, key)
+        # return wait_for_coroutine(self._loop, coroutine)
+        return self._data_client.get(cache_name, key)
 
-    def get_multi(self, cache_name: str, *keys: Union[str, bytes]) -> CacheGetMultiResponse:
-        """Retrieve multiple items from the cache.
+    # def get_multi(self, cache_name: str, *keys: Union[str, bytes]) -> CacheGetMultiResponse:
+    #     """Retrieve multiple items from the cache.
+    #
+    #     Args:
+    #         cache_name (str): Name of the cache to get the item from.
+    #         keys: (Union[str, bytes]): The keys used to retrieve the items.
+    #
+    #     Returns:
+    #         CacheGetMultiResponse
+    #
+    #     Raises:
+    #         InvalidArgumentError: If validation fails for the provided method arguments.
+    #         BadRequestError: If the provided inputs are rejected by server because they are invalid
+    #         NotFoundError: If the cache with the given name doesn't exist.
+    #         AuthenticationError: If the provided Momento Auth Token is invalid.
+    #         InternalServerError: If server encountered an unknown error while trying to retrieve the item.
+    #     """
+    #     coroutine = self._momento_async_client.get_multi(cache_name, *keys)
+    #     return wait_for_coroutine(self._loop, coroutine)
 
-        Args:
-            cache_name (str): Name of the cache to get the item from.
-            keys: (Union[str, bytes]): The keys used to retrieve the items.
-
-        Returns:
-            CacheGetMultiResponse
-
-        Raises:
-            InvalidArgumentError: If validation fails for the provided method arguments.
-            BadRequestError: If the provided inputs are rejected by server because they are invalid
-            NotFoundError: If the cache with the given name doesn't exist.
-            AuthenticationError: If the provided Momento Auth Token is invalid.
-            InternalServerError: If server encountered an unknown error while trying to retrieve the item.
-        """
-        coroutine = self._momento_async_client.get_multi(cache_name, *keys)
-        return wait_for_coroutine(self._loop, coroutine)
-
-    def delete(self, cache_name: str, key: str) -> CacheDeleteResponse:
-        """Delete an item from the cache.
-
-        Performs a no-op if the item is not in the cache.
-
-        Args:
-            cache_name: Name of the cache to delete the item from.
-            key (string or bytes): The key to delete.
-
-        Returns:
-            CacheDeleteResponse
-
-        Raises:
-            InvalidArgumentError: If validation fails for provided method arguments.
-            BadRequestError: If the provided inputs are rejected by server because they are invalid
-            NotFoundError: If the cache with the given name doesn't exist.
-            AuthenticationError: If the provided Momento Auth Token is invalid.
-            InternalServerError: If server encountered an unknown error while trying to delete the item.
-        """
-        coroutine = self._momento_async_client.delete(cache_name, key)
-        return wait_for_coroutine(self._loop, coroutine)
+    # def delete(self, cache_name: str, key: str) -> CacheDeleteResponse:
+    #     """Delete an item from the cache.
+    #
+    #     Performs a no-op if the item is not in the cache.
+    #
+    #     Args:
+    #         cache_name: Name of the cache to delete the item from.
+    #         key (string or bytes): The key to delete.
+    #
+    #     Returns:
+    #         CacheDeleteResponse
+    #
+    #     Raises:
+    #         InvalidArgumentError: If validation fails for provided method arguments.
+    #         BadRequestError: If the provided inputs are rejected by server because they are invalid
+    #         NotFoundError: If the cache with the given name doesn't exist.
+    #         AuthenticationError: If the provided Momento Auth Token is invalid.
+    #         InternalServerError: If server encountered an unknown error while trying to delete the item.
+    #     """
+    #     # coroutine = self._momento_async_client.delete(cache_name, key)
+    #     # return wait_for_coroutine(self._loop, coroutine)
+    #     return self._data_client.

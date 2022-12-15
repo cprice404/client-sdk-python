@@ -19,6 +19,10 @@ from .cache_operation_types import (
     RevokeSigningKeyResponse,
 )
 
+from .internal.synchronous._scs_control_client import _ScsControlClient
+
+from . import _momento_endpoint_resolver
+
 
 class SimpleCacheClient:
     def __init__(
@@ -41,30 +45,41 @@ class SimpleCacheClient:
         """
         _validate_request_timeout(request_timeout_ms)
 
-        self._init_loop()
-        self._momento_async_client = aio.SimpleCacheClient(
-            auth_token=auth_token,
-            default_ttl_seconds=default_ttl_seconds,
-            request_timeout_ms=request_timeout_ms,
+        # self._init_loop()
+        # self._momento_async_client = aio.SimpleCacheClient(
+        #     auth_token=auth_token,
+        #     default_ttl_seconds=default_ttl_seconds,
+        #     request_timeout_ms=request_timeout_ms,
+        # )
+
+        endpoints = _momento_endpoint_resolver.resolve(auth_token)
+        self._control_client = _ScsControlClient(auth_token, endpoints.control_endpoint)
+        self._data_client = _ScsDataClient(
+            auth_token,
+            endpoints.cache_endpoint,
+            default_ttl_seconds,
+            data_client_operation_timeout_ms,
         )
 
-    def _init_loop(self) -> None:
-        try:
-            # If the synchronous client is used inside an async application,
-            # use the event loop it's running within.
-            loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
-        except RuntimeError:
-            # Currently, we rely on asyncio's module-wide event loop due to the
-            # way the grpc stubs we've got are hiding the _loop parameter.
-            # If a separate loop is required, e.g., so you can run Simple Cache
-            # on a background thread, you'll want to open an issue.
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        self._loop = loop
+
+    # def _init_loop(self) -> None:
+    #     try:
+    #         # If the synchronous client is used inside an async application,
+    #         # use the event loop it's running within.
+    #         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+    #     except RuntimeError:
+    #         # Currently, we rely on asyncio's module-wide event loop due to the
+    #         # way the grpc stubs we've got are hiding the _loop parameter.
+    #         # If a separate loop is required, e.g., so you can run Simple Cache
+    #         # on a background thread, you'll want to open an issue.
+    #         loop = asyncio.new_event_loop()
+    #         asyncio.set_event_loop(loop)
+    #     self._loop = loop
 
     def __enter__(self) -> "SimpleCacheClient":
-        print("\n\n\n__ENTER__\n\n\n")
-        wait_for_coroutine(self._loop, self._momento_async_client.__aenter__())
+        # print("\n\n\n__ENTER__\n\n\n")
+        # wait_for_coroutine(self._loop, self._momento_async_client.__aenter__())
+        # return self
         return self
 
     def __exit__(
@@ -94,9 +109,9 @@ class SimpleCacheClient:
             AuthenticationError: If the provided Momento Auth Token is invalid.
             ClientSdkError: For any SDK checks that fail.
         """
-        coroutine = self._momento_async_client.create_cache
-        args = [cache_name]
-        return wait_for_coroutine(self._loop, coroutine, args)
+        coroutine = self._momento_async_client.create_cache(cache_name)
+        # args = [cache_name]
+        return wait_for_coroutine(self._loop, coroutine)
 
     def delete_cache(self, cache_name: str) -> DeleteCacheResponse:
         """Deletes a cache and all the items within it.

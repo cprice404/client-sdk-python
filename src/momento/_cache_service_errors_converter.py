@@ -26,14 +26,19 @@ __rpc_to_error = {
 
 def convert(exception: Exception) -> Exception:
     if isinstance(exception, errors.SdkError):
+        logs.logger.warning("ERROR CONVERTER: it's an SDK ERROR!")
         return exception
 
     if isinstance(exception, grpc.RpcError):
+        logs.logger.warning(f"ERROR CONVERTER: it's an RPC ERROR with code: {exception.code()}!")
         if exception.code() in __rpc_to_error:
+            logs.logger.warning(f"ERROR CONVERTER: it's an RPC ERROR with a recognized code!  converting!")
             return __rpc_to_error[exception.code()](exception.details())
         else:
+            logs.logger.warning(f"ERROR CONVERTER: We don't recognize code {exception.code} so returning an internal server error!")
             return errors.InternalServerError("CacheService failed with an internal error")
 
+    logs.logger.warning("ERROR CONVERTER: we dont recognize the error type so converting it to ClientSdkError!")
     return errors.ClientSdkError("Operation failed with error: " + str(exception))
 
 

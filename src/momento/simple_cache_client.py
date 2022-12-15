@@ -63,6 +63,7 @@ class SimpleCacheClient:
         self._loop = loop
 
     def __enter__(self) -> "SimpleCacheClient":
+        print("\n\n\n__ENTER__\n\n\n")
         wait_for_coroutine(self._loop, self._momento_async_client.__aenter__())
         return self
 
@@ -93,8 +94,9 @@ class SimpleCacheClient:
             AuthenticationError: If the provided Momento Auth Token is invalid.
             ClientSdkError: For any SDK checks that fail.
         """
-        coroutine = self._momento_async_client.create_cache(cache_name)
-        return wait_for_coroutine(self._loop, coroutine)
+        coroutine = self._momento_async_client.create_cache
+        args = [cache_name]
+        return wait_for_coroutine(self._loop, coroutine, args)
 
     def delete_cache(self, cache_name: str) -> DeleteCacheResponse:
         """Deletes a cache and all the items within it.
@@ -206,6 +208,7 @@ class SimpleCacheClient:
             AuthenticationError: If the provided Momento Auth Token is invalid.
             InternalServerError: If server encountered an unknown error while trying to store the item.
         """
+        print("\n\n\n\nSET!!!\n\n\n")
         coroutine = self._momento_async_client.set(cache_name, key, value, ttl_seconds)
         return wait_for_coroutine(self._loop, coroutine)
 
@@ -252,6 +255,7 @@ class SimpleCacheClient:
             AuthenticationError: If the provided Momento Auth Token is invalid.
             InternalServerError: If server encountered an unknown error while trying to retrieve the item.
         """
+        print("\n\n\n\nGET!!!\n\n\n")
         coroutine = self._momento_async_client.get(cache_name, key)
         return wait_for_coroutine(self._loop, coroutine)
 

@@ -37,6 +37,8 @@ python3 -m pip install --user pipenv
 To set up the `pipenv` environment for this project:
 
 ```bash
+# specify your preferred version of python here
+pipenv --python 3.9
 pipenv install
 ```
 

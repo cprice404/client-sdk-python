@@ -1,22 +1,14 @@
-import asyncio
 from types import TracebackType
 from typing import Mapping, Optional, Type, Union
 
-from ._async_utils import wait_for_coroutine
 from ._utilities._data_validation import _validate_request_timeout
-from .aio import simple_cache_client as aio
 from .cache_operation_types import (
     CacheDeleteResponse,
-    CacheGetMultiResponse,
     CacheGetResponse,
-    CacheSetMultiResponse,
     CacheSetResponse,
     CreateCacheResponse,
-    CreateSigningKeyResponse,
     DeleteCacheResponse,
     ListCachesResponse,
-    ListSigningKeysResponse,
-    RevokeSigningKeyResponse,
 )
 
 from .internal.synchronous._scs_control_client import _ScsControlClient
@@ -207,7 +199,7 @@ class SimpleCacheClient:
     def set(
         self,
         cache_name: str,
-        key: str,
+        key: Union[str, bytes],
         value: Union[str, bytes],
         ttl_seconds: Optional[int] = None,
     ) -> CacheSetResponse:
@@ -261,7 +253,7 @@ class SimpleCacheClient:
     #     coroutine = self._momento_async_client.set_multi(cache_name, items, ttl_seconds)
     #     return wait_for_coroutine(self._loop, coroutine)
 
-    def get(self, cache_name: str, key: str) -> CacheGetResponse:
+    def get(self, cache_name: str, key: Union[str, bytes]) -> CacheGetResponse:
         """Retrieve an item from the cache
 
         Args:
@@ -303,25 +295,25 @@ class SimpleCacheClient:
     #     coroutine = self._momento_async_client.get_multi(cache_name, *keys)
     #     return wait_for_coroutine(self._loop, coroutine)
 
-    # def delete(self, cache_name: str, key: str) -> CacheDeleteResponse:
-    #     """Delete an item from the cache.
-    #
-    #     Performs a no-op if the item is not in the cache.
-    #
-    #     Args:
-    #         cache_name: Name of the cache to delete the item from.
-    #         key (string or bytes): The key to delete.
-    #
-    #     Returns:
-    #         CacheDeleteResponse
-    #
-    #     Raises:
-    #         InvalidArgumentError: If validation fails for provided method arguments.
-    #         BadRequestError: If the provided inputs are rejected by server because they are invalid
-    #         NotFoundError: If the cache with the given name doesn't exist.
-    #         AuthenticationError: If the provided Momento Auth Token is invalid.
-    #         InternalServerError: If server encountered an unknown error while trying to delete the item.
-    #     """
-    #     # coroutine = self._momento_async_client.delete(cache_name, key)
-    #     # return wait_for_coroutine(self._loop, coroutine)
-    #     return self._data_client.
+    def delete(self, cache_name: str, key: Union[str, bytes]) -> CacheDeleteResponse:
+        """Delete an item from the cache.
+
+        Performs a no-op if the item is not in the cache.
+
+        Args:
+            cache_name: Name of the cache to delete the item from.
+            key (string or bytes): The key to delete.
+
+        Returns:
+            CacheDeleteResponse
+
+        Raises:
+            InvalidArgumentError: If validation fails for provided method arguments.
+            BadRequestError: If the provided inputs are rejected by server because they are invalid
+            NotFoundError: If the cache with the given name doesn't exist.
+            AuthenticationError: If the provided Momento Auth Token is invalid.
+            InternalServerError: If server encountered an unknown error while trying to delete the item.
+        """
+        # coroutine = self._momento_async_client.delete(cache_name, key)
+        # return wait_for_coroutine(self._loop, coroutine)
+        return self._data_client.delete(cache_name, key)

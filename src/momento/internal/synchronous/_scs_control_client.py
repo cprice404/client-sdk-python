@@ -32,9 +32,8 @@ class _ScsControlClient:
             logs.debug(f"Creating cache with name: {cache_name}")
             request = _CreateCacheRequest()
             request.cache_name = cache_name
-            return CreateCacheResponse(
-                self._getStub().CreateCache(request, timeout=_DEADLINE_SECONDS)
-            )
+            self._getStub().CreateCache(request, timeout=_DEADLINE_SECONDS)
+            return CreateCacheResponse()
         except Exception as e:
             logs.debug(
                 f"Failed to create cache: {cache_name} with exception:{e}"
@@ -48,9 +47,8 @@ class _ScsControlClient:
             logs.debug(f"Deleting cache with name: {cache_name}")
             request = _DeleteCacheRequest()
             request.cache_name = cache_name
-            return DeleteCacheResponse(
-                self._getStub().DeleteCache(request, timeout=_DEADLINE_SECONDS)
-            )
+            self._getStub().DeleteCache(request, timeout=_DEADLINE_SECONDS)
+            return DeleteCacheResponse()
         except Exception as e:
             logs.debug(
                 f"Failed to delete cache: {cache_name} with exception:{e}"
@@ -69,8 +67,8 @@ class _ScsControlClient:
                 )
             )
         except Exception as e:
-            # raise _cache_service_errors_converter.convert(e)
-            raise e
+            raise _cache_service_errors_converter.convert(e)
+            # raise e
 
     def _getStub(self) -> ScsControlStub:
         return self._grpc_manager.stub()
